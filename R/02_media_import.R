@@ -66,7 +66,8 @@ lemmatized_articles <-
   mutate(doc_id = as.numeric(paste(flatten(str_extract_all(
     doc_id,"[[:digit:]]+"))))) %>%
   arrange(doc_id) %>%
-  mutate_each(list(tolower)) %>%
+  mutate_each(list(tolower)) %>% 
+  # Warning message: `mutate_each_()` is deprecated as of dplyr 0.7.0. Please use `across()` instead.
   mutate(lemmas = str_squish(str_replace_all(lemmas, "[^a-zA-Z0-9 ]", " "))
   ) %>%
   mutate(lemmas = gsub('\\b\\w{1,2}\\b','', lemmas))

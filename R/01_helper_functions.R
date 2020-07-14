@@ -1,10 +1,11 @@
 #### HELPER FUNCTIONS ##########################################################
 
-library(tidyverse)
-library(upgo)
-library(LexisNexisTools)
-library(spacyr)
-library(tidytext)
-library(SentimentAnalysis)
 library(ggmap)
 library(sf)
+library(spacyr) # Need to download miniconda and spacy_install()
+# Run spacy_download_langmodel("fr") before lemmatizing French articles
+library(LexisNexisTools)
+library(SentimentAnalysis)
+library(tidytext)
+library(tidyverse)
+library(upgo)
