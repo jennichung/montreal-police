@@ -104,6 +104,8 @@ ner_to_process <-
 
 # Query Google to geocode named entities ----------------------------------
 
+register_google(key = "AIzaSyAFGoWSQnuAtA8E7iXYfabhfy8igRvVqqw", write = TRUE)
+
 iterations <- ceiling(nrow(ner_to_process) / 500)
 locations_new <- vector("list", iterations)
 
@@ -120,6 +122,7 @@ locations_new <- bind_rows(locations_new)
 
 
 # Upload new results to server (only works with admin privileges)
+
 RPostgres::dbWriteTable(upgo:::.upgo_env$con, "geolocation", locations_new, 
                         append = TRUE)
 
@@ -131,6 +134,7 @@ upgo_disconnect()
 locations <- bind_rows(locations_new, ner_already_processed)
 
 # Remove locations that were not geocoded
+
 locations <- 
   locations %>% 
   filter(!is.na(lon)) %>% 
@@ -138,13 +142,20 @@ locations <-
   st_transform(32618)
 
 # Perform a join to associate each entity with each document id
+
 ner_locations <- inner_join(ner, locations, by = "entity")
 
 # Perform a spatial join to match locations to boroughs
 ### NEED TO HAVE BOROUGH SPATIAL LAYER TO JOIN HERE
+
+boroughs <- 
+  st_read("data/Quartiers_sociologiques_2014.shp") %>% 
+  st_transform(32618)
+
 ner_locations <-
   ner_locations %>% 
-  st_join(boroughs) %>%
-  filter(!is.na(borough))
+  st_join(boroughs) #%>% 
+#  filter(!is.na(borough))  not sure what this is supposed to do
   
-
+#Error in UseMethod("st_join") : 
+#no applicable method for 'st_join' applied to an object of class "c('tbl_df', 'tbl', 'data.frame')"
