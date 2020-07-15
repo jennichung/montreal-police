@@ -88,7 +88,9 @@ ner_compressed <-
 
 # Compare named entities against database ---------------------------------
 
-upgo_connect(geolocation = TRUE)
+upgo_connect()
+
+geolocation_remote <- dplyr::tbl(con, "geolocation")
 
 ner_already_processed <- 
   geolocation_remote %>% 
