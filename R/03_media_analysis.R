@@ -8,24 +8,6 @@ dictionary <-
   c(SentimentDictionaryBinary(qdapDictionaries::positive.words,
                               qdapDictionaries::negative.words))
 
-# machine_learning_synonyms <- 
-#   c("protest", "anti", "affordability", "mobilize", "mobilise", "mobilization", 
-#     "mobilisation", "oppose",  "resist", "opposition", "gentrification", 
-#     "threaten", "rent", "expensive", "unaffordable", "eviction", "landlord",
-#     "threat", "manifestation", "complaint", "disapprove", "evict", 
-#     "overtourism", "detriment", "ghost", "nuisance", "consultation", "opponent",
-#     "discrimination", "critic", "crisis", "shortage", "blame", "garbage", 
-#     "noise", "complain", "concern", "coalition", "hostile", "hostility", 
-#     "fairbnb", "activist", "activism", "displace", "illegal", "housing", 
-#     "market", "multiple", "listings", "disturbance", "damage", "threat", 
-#     "residence", "hotel", "gap", "investment", "poor", "need", "rent hike", 
-#     "community led", "housing stock", "nuisance", "garbage", "noise", "party", 
-#     "disrespect", "lockbox", "regulation", "unregulate", "scarce", "fines", 
-#     "fined", "shut", "backlash", "homeless", "homelessness", "affordability")
-# 
-# dictionary[["negativeWords"]] <- 
-#   c(dictionary[["negativeWords"]], machine_learning_synonyms)
-
 
 # Assign a score to each article ------------------------------------------
 
@@ -41,6 +23,8 @@ media <-
       sum(.x %in% dictionary[["negativeWords"]])}) / word_count)
 
 rm(dictionary)
+
+save(media, lemmatized_articles, file = "data/media.Rdata")
 
 
 ### Named entity recognition and geocoding ##################################### 
@@ -75,8 +59,19 @@ ner <- bind_rows(ner_text, ner_headline) %>%
   distinct() %>% 
   as_tibble()
 
+doc_id_table <- 
+  tibble(
+    ner = unique(ner$doc_id),
+    media = media$doc_id
+  )
+
+ner <- 
+  left_join(ner, doc_id_table, by = c("doc_id" = "ner")) %>% 
+  mutate(doc_id = media) %>% 
+  select(-media)
+
 save(ner, file = "data/ner.Rdata")
-rm(ner_text, ner_headline)
+rm(ner_text, ner_headline, doc_id_table)
 
 
 # Compress ner to reduce geolocation API calls ----------------------------
@@ -138,11 +133,4 @@ locations <-
 # Perform a join to associate each entity with each document id
 ner_locations <- inner_join(ner, locations, by = "entity")
 
-# Perform a spatial join to match locations to boroughs
-### NEED TO HAVE BOROUGH SPATIAL LAYER TO JOIN HERE
-ner_locations <-
-  ner_locations %>% 
-  st_join(boroughs) %>%
-  filter(!is.na(borough))
-  
-
+save(ner_locations, file = "data/ner_locations.Rdata")

@@ -23,7 +23,9 @@ media <-
   distinct(headline, .keep_all = TRUE) %>% 
   ungroup() %>% 
   # Assign doc_id for processing
-  mutate(doc_id = 1:n())
+  mutate(doc_id = 1:n()) %>% 
+  select(doc_id, everything()) %>% 
+  select(-ID)
 
 
 # Lemmatize ---------------------------------------------------------------
@@ -36,6 +38,9 @@ iterations <- ceiling(nrow(media) / 500)
 spacy_articles <- vector("list", iterations)
 
 for (i in seq_len(iterations)) {
+  
+  print(paste0("Processing batch ", i, " of ", iterations, "."))
+  
   spacy_articles[[i]] <- 
     spacy_parse(
       media[((i - 1) * 500 + 1):min((i * 500), nrow(media)),]$text, 
@@ -43,13 +48,12 @@ for (i in seq_len(iterations)) {
   
   spacy_articles[[i]] <-
     spacy_articles[[i]] %>%
+    as_tibble() %>% 
     mutate(doc_id = paste0("text", 
-                           ((i - 1) * 500) + as.numeric(substr(doc_id, 5, 7)))
-           ) %>%
-    as_tibble()
+                           ((i - 1) * 500) + as.numeric(substr(doc_id, 5, 7))))
 }
 
-spacy_articles <- bind_rows(spacy_articles) %>% as_tibble()
+spacy_articles <- bind_rows(spacy_articles)
 
 save(spacy_articles, file = "spacy_temp.Rdata")
 
@@ -78,13 +82,6 @@ lemmatized_articles <-
 
 # Trim original media files to only ones that mention police > 2 & montreal > 2
 media <- media %>% filter(doc_id %in% lemmatized_articles$doc_id)
-
-# Reassign an ID to allow for future text processing
-media <- media %>% mutate(ID = 1:n())
-
-lemmatized_articles <- 
-  lemmatized_articles %>% 
-  mutate(doc_id = 1:n())
 
 
 # Clean up ----------------------------------------------------------------
