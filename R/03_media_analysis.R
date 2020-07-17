@@ -144,18 +144,3 @@ locations <-
 # Perform a join to associate each entity with each document id
 
 ner_locations <- inner_join(ner, locations, by = "entity")
-
-# Perform a spatial join to match locations to boroughs
-### NEED TO HAVE BOROUGH SPATIAL LAYER TO JOIN HERE
-
-boroughs <- 
-  st_read("data/Quartiers_sociologiques_2014.shp") %>%
-  st_as_sf(coords = c("lon", "lat"), crs = 4326) %>% 
-  st_transform(32618)
-
-ner_locations <-
-  ner_locations %>% 
-  st_as_sf() %>% 
-  st_join(boroughs) #%>% 
-#  filter(!is.na(borough))
-  
