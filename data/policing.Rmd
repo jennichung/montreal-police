@@ -1,0 +1,255 @@
+---
+title: "Policing sentiment in Montreal, 2015-2020"
+output: html_document
+---
+
+```{r, include = FALSE}
+library(tidyverse)
+library(ggplot2)
+library(ggrepel)
+library(sf)
+
+load("media.Rdata")
+load("ner.Rdata")
+load("ner_locations.Rdata")
+load("boroughs.Rdata")
+load("censusbyborough.Rdata")
+
+ner_locations <-
+  ner_locations %>% 
+  st_as_sf() %>% 
+  st_join(boroughs) %>% 
+  filter(!is.na(borough))
+```
+
+
+## Overall policing sentiment per borough
+
+```{r, echo = FALSE, message = FALSE, error = FALSE}
+media %>% 
+  inner_join(ner_locations) %>% 
+  add_count(borough) %>%   
+  filter(n > 100) %>%      
+  group_by(borough) %>% 
+  summarise(sentiment_mean = mean(sentiment, na.rm = TRUE)) %>% 
+  inner_join(boroughs) %>% 
+  st_as_sf() %>%
+  ggplot() +
+  geom_sf(aes(fill = sentiment_mean)) +
+  geom_sf(data = boroughs, colour = "black", fill = NA) +
+  labs(title = "policing sentiment per borough",
+       fill = "sentiment")+
+  theme_minimal()
+```
+
+
+## Policing sentiment related to "racism"
+
+```{r, echo = FALSE, message = FALSE, error = FALSE}
+media %>% 
+  filter(str_detect(text, "racism")) %>% 
+  inner_join(ner_locations) %>% 
+  group_by(borough) %>% 
+  summarise(sentiment_mean = mean(sentiment, na.rm = TRUE)) %>% 
+  inner_join(boroughs) %>% 
+  st_as_sf() %>%
+  ggplot() +
+  geom_sf(aes(fill = sentiment_mean)) +
+  geom_sf(data = boroughs, colour = "black", fill = NA) +
+  labs(title = "policing sentiment per borough",
+       fill = "sentiment")+
+  theme_minimal()
+```
+
+
+## Policing sentiment related to "discrimination"
+
+```{r, echo = FALSE, message = FALSE, error = FALSE}
+media %>% 
+  filter(str_detect(text, "discrimination")) %>% 
+  inner_join(ner_locations) %>% 
+  group_by(borough) %>% 
+  summarise(sentiment_mean = mean(sentiment, na.rm = TRUE)) %>% 
+  inner_join(boroughs) %>% 
+  st_as_sf() %>%
+  ggplot() +
+  geom_sf(aes(fill = sentiment_mean)) +
+  geom_sf(data = boroughs, colour = "black", fill = NA) +
+  labs(title = "policing sentiment per borough",
+       fill = "sentiment")+
+  theme_minimal()
+```
+
+
+## Policing sentiment related to "systemic"
+
+```{r, echo = FALSE, message = FALSE, error = FALSE}
+media %>% 
+  filter(str_detect(text, "systemic")) %>% 
+  inner_join(ner_locations) %>% 
+  group_by(borough) %>% 
+  summarise(sentiment_mean = mean(sentiment, na.rm = TRUE)) %>% 
+  inner_join(boroughs) %>% 
+  st_as_sf() %>%
+  ggplot() +
+  geom_sf(aes(fill = sentiment_mean)) +
+  geom_sf(data = boroughs, colour = "black", fill = NA) +
+  labs(title = "policing sentiment per borough",
+       fill = "sentiment")+
+  theme_minimal()
+```
+
+
+##  Relationship between policing sentiment and Black population
+
+```{r, echo = FALSE, message = FALSE, error = FALSE}
+media %>% 
+  inner_join(ner_locations) %>% 
+  add_count(borough) %>%   # counts the number of matches per borough
+  filter(n > 100) %>%      # filters out the boroughs with less than 100 matches, for calculation
+  group_by(borough) %>% 
+  summarise(average_sentiment = mean(sentiment, na.rm = TRUE)) %>% 
+  right_join(censusbyborough) %>% 
+  filter(!is.na(average_sentiment)) %>%    # filters out the boroughs with less than 100 matches, for plotting
+  st_as_sf() %>% 
+  ggplot(aes(x = average_sentiment, y = black_pct_pop, colour = borough)) +
+  geom_point(alpha = 0.5, size = 5) +
+  geom_label_repel(aes(label = borough), size = 3, box.padding = 0.25, point.padding	= 0.5, segment.color = "grey50") +
+  scale_x_continuous(name = "Mean Sentiment Score") +
+  scale_y_continuous(name = "Black Population (%)") +
+  labs(title = "Relationship between policing sentiment and Black population",
+       subtitle = "Montreal, per borough") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+
+##  Relationship between policing sentiment and indigenous population
+
+```{r, echo = FALSE, message = FALSE, error = FALSE}
+media %>% 
+  inner_join(ner_locations) %>% 
+  add_count(borough) %>%   # counts the number of matches per borough
+  filter(n > 100) %>%      # filters out the boroughs with less than 100 matches, for calculation
+  group_by(borough) %>% 
+  summarise(average_sentiment = mean(sentiment, na.rm = TRUE)) %>% 
+  right_join(censusbyborough) %>% 
+  filter(!is.na(average_sentiment)) %>%    # filters out the boroughs with less than 100 matches, for plotting
+  st_as_sf() %>% 
+  ggplot(aes(x = average_sentiment, y = indigenous_pct_pop, colour = borough)) +
+  geom_point(alpha = 0.5, size = 5) +
+  geom_label_repel(aes(label = borough), size = 3, box.padding = 0.25, point.padding	= 0.5, segment.color = "grey50") +
+  scale_x_continuous(name = "Mean Sentiment Score") +
+  scale_y_continuous(name = "Low-income Population (%)") +
+  labs(title = "Relationship between policing sentiment and indigenous population",
+       subtitle = "Montreal, per borough") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+
+##  Relationship between policing sentiment and low-income population
+
+```{r, echo = FALSE, message = FALSE, error = FALSE}
+media %>% 
+  inner_join(ner_locations) %>% 
+  add_count(borough) %>%   # counts the number of matches per borough
+  filter(n > 100) %>%      # filters out the boroughs with less than 100 matches, for calculation
+  group_by(borough) %>% 
+  summarise(average_sentiment = mean(sentiment, na.rm = TRUE)) %>% 
+  right_join(censusbyborough) %>% 
+  filter(!is.na(average_sentiment)) %>%    # filters out the boroughs with less than 100 matches, for plotting
+  st_as_sf() %>% 
+  ggplot(aes(x = average_sentiment, y = total_LICO_pct_pop, colour = borough)) +
+  geom_point(alpha = 0.5, size = 5) +
+  geom_label_repel(aes(label = borough), size = 3, box.padding = 0.25, point.padding	= 0.5, segment.color = "grey50") +
+  scale_x_continuous(name = "Mean Sentiment Score") +
+  scale_y_continuous(name = "Low-income Population (%)") +
+  labs(title = "Relationship between policing sentiment and low-income population",
+       subtitle = "Montreal, per borough") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+
+##  Relationship between policing sentiment and immigrant population
+
+```{r, echo = FALSE, message = FALSE, error = FALSE}
+media %>% 
+  inner_join(ner_locations) %>% 
+  add_count(borough) %>%   # counts the number of matches per borough
+  filter(n > 100) %>%      # filters out the boroughs with less than 100 matches, for calculation
+  group_by(borough) %>% 
+  summarise(average_sentiment = mean(sentiment, na.rm = TRUE)) %>% 
+  right_join(censusbyborough) %>% 
+  filter(!is.na(average_sentiment)) %>%    # filters out the boroughs with less than 100 matches, for plotting
+  st_as_sf() %>% 
+  ggplot(aes(x = average_sentiment, y = immigrant_pct_pop, colour = borough)) +
+  geom_point(alpha = 0.5, size = 5) +
+  geom_label_repel(aes(label = borough), size = 3, box.padding = 0.25, point.padding	= 0.5, segment.color = "grey50") +
+  scale_x_continuous(name = "Mean Sentiment Score") +
+  scale_y_continuous(name = "Low-income Population (%)") +
+  labs(title = "Relationship between policing sentiment and immigrant population",
+       subtitle = "Montreal, per borough") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+
+##  Relationship between policing sentiment and refugee population
+
+```{r, echo = FALSE, message = FALSE, error = FALSE}
+media %>% 
+  inner_join(ner_locations) %>% 
+  add_count(borough) %>%   # counts the number of matches per borough
+  filter(n > 100) %>%      # filters out the boroughs with less than 100 matches, for calculation
+  group_by(borough) %>% 
+  summarise(average_sentiment = mean(sentiment, na.rm = TRUE)) %>% 
+  right_join(censusbyborough) %>% 
+  filter(!is.na(average_sentiment)) %>%    # filters out the boroughs with less than 100 matches, for plotting
+  st_as_sf() %>% 
+  ggplot(aes(x = average_sentiment, y = refugee_pct_pop, colour = borough)) +
+  geom_point(alpha = 0.5, size = 5) +
+  geom_label_repel(aes(label = borough), size = 3, box.padding = 0.25, point.padding	= 0.5, segment.color = "grey50") +
+  scale_x_continuous(name = "Mean Sentiment Score") +
+  scale_y_continuous(name = "Low-income Population (%)") +
+  labs(title = "Relationship between policing sentiment and refugee population",
+       subtitle = "Montreal, per borough") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+
+## Average policing sentiment from 2015-01-01 to 2020-06-30
+
+```{r, echo = FALSE, message = FALSE, error = FALSE}
+media %>% 
+#  filter(str_detect(text, "systemic")) %>% 
+  filter(date >= "2015-01-01", date <= "2020-06-30") %>%
+  group_by(date) %>%
+  summarize(avg_sentiment = mean(sentiment)) %>%
+  ggplot(aes(date, avg_sentiment)) +
+  geom_line() +
+  geom_smooth()+
+  theme_minimal()
+```
+
+
+## Average policing sentiment from 2020-01-01 to 2020-06-30
+
+```{r, echo = FALSE, message = FALSE, error = FALSE}
+media %>% 
+#  filter(str_detect(text, "systemic")) %>% 
+  filter(date >= "2015-01-01", date <= "2020-06-30") %>%
+  group_by(date) %>%
+  summarize(avg_sentiment = mean(sentiment)) %>%
+  ggplot(aes(date, avg_sentiment)) +
+  geom_line() +
+  geom_smooth()+
+  theme_minimal()+
+  tidyquant::coord_x_date(xlim = c("2020-01-01", "2020-06-30"),
+               ylim = c(-0.15, 0.025))+
+  geom_vline(xintercept = as.numeric(as.Date('2020-05-25')), colour = "red")
+```
+
+
